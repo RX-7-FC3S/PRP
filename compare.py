@@ -44,8 +44,8 @@ def calculate(df):
             if i != 0 and j != 0:
                 model += (u[i] - u[j] + n * x[i, j] <= n - 1)
     model += lp.lpSum(d[i, j] * x[i, j] for (i, j) in routes)
-    model.solve()
-
+    # model.solve()
+    model.solve(lp.GLPK(msg=False))
     res = {
         'variables': {
             'x': list(x.name for x in model.variables() if x.name[0] == 'x' and x.value() == 1),
