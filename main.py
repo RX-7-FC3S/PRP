@@ -49,7 +49,7 @@ def battle():
                     rate = main(rows, cols, shf_size, start, j, opponent)
                 res.append(str(round(rate)))
                 dur = time.perf_counter() - time_start
-                print('\r线程'+ str(n) + ';情景:' + str(i), '; 拣货数量:' + str(j), '; 情景耗时:' + str(round(dur)) + 's', end='')
+                print('线程'+ str(n) + ';情景:' + str(i), '; 拣货数量:' + str(j), '; 情景耗时:' + str(round(dur)) + 's', end='')
             cursor.execute(f'INSERT INTO RESULT{opponent} ({",".join(fields)}) VALUES ({",".join(res)})')
             db.commit()
 
@@ -63,6 +63,6 @@ if __name__ == '__main__':
     # 选择比较对象: 0 代表与"按顺序拣货对比", 1 代表与"最近点拣货对比"
     opponent = 1
     # 线程数
-    threads = 5
+    threads = 50
 
     battle()
