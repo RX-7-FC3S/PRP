@@ -44,7 +44,7 @@ def calculate(df):
             if i != 0 and j != 0:
                 model += (u[i] - u[j] + n * x[i, j] <= n - 1)
     model += lp.lpSum(d[i, j] * x[i, j] for (i, j) in routes)
-    model.solve(lp.GLPK(msg=False))
+    model.solve()
 
     res = {
         'variables': {
@@ -227,12 +227,65 @@ def by_model(des, df, graph_branch):
 
 def by_sequence(des, df, graph_branch):
     relative_sequence = []  # 储存为 nx.edge 的格式： [(d0, d1, {'weight': dis, 'nodes_in_route': [0, 1, 2, ...]}, {...}]
+
     x = []
     for i in range(len(des)):
         if i != len(des) - 1:
             x.append((i, i + 1))
         else:
             x.append((i, 0))
+
+    objective = 0
+    for c in x:
+        d0 = des[c[0]]
+        d1 = des[c[1]]
+        # 利用 "分支界定法" branch() 得到实际路径 (路径包含的节点)
+        relative_sequence.append((d0, d1, {'weight': int(df[d0][d1]), 'nodes_in_route': branch(graph_branch, d0, d1)}))
+        objective += int(df[d0][d1])
+
+    return relative_sequence, objective
+
+
+def by_nearest_node(des, df, graph_branch):
+
+    relative_sequence = []  # 储存为 nx.edge 的格式： [(d0, d1, {'weight': dis, 'nodes_in_route': [0, 1, 2, ...]}, {...}]
+
+    nearestPoints = []
+    des_Copy = des.copy()
+    df_Copy = df.copy()
+    minIndex = 0
+    minPoint = des[minIndex]
+
+    while len(des_Copy) != 1:
+        des_Copy.remove(minPoint)
+        # 获取一列
+        currentList = df_Copy[minPoint].values
+        indexP = np.where(currentList == 0)
+        currentList[indexP] = 20000
+
+        minIndex = currentList.argmin()
+        indexP = np.where(currentList != 20000)
+        currentList[indexP] = 20000
+
+        # 获取一行
+        currentList = df_Copy.loc[minPoint].values
+        indexP = np.where(currentList != 20000)
+        currentList[indexP] = 20000
+
+        minPoint = des[minIndex]
+        nearestPoints.append(minPoint)
+    nearestPoints.insert(0, des[0])
+
+    des = nearestPoints
+
+    x = []
+
+    for i in range(len(des)):
+        if i != len(des) - 1:
+            x.append((i, i + 1))
+        else:
+            x.append((i, 0))
+
     objective = 0
     for c in x:
         d0 = des[c[0]]
@@ -268,7 +321,7 @@ def clean_dir(path):
         os.remove(os.path.join(path, i))
 
 
-def main(rows, cols, shf_size, start, num):
+def main(rows, cols, shf_size, start, num, opponent):
 
     nodes = create_nodes(rows, cols, shf_size)
     pos = nodes[0]
@@ -285,20 +338,29 @@ def main(rows, cols, shf_size, start, num):
 
     graph_branch = create_graph_for_branch(edges)
 
-    model_res = by_model(des, df, graph_branch)
-    # relative_sequence = model_res[0]
+    by_model_res = by_model(des, df, graph_branch)
+    # relative_sequence = by_model_res[0]
     # G = draw_base_graph(pos, nodes, edges)
     # nx.draw_networkx_edges(G, pos, relative_sequence, 10, 'red')
     # plt.savefig('p/model{}.png'.format(num))
 
-    sequence_res = by_sequence(des, df, graph_branch)
-    # relative_sequence = sequence_res[0]
-    # G = draw_base_graph(pos, nodes, edges)
-    # nx.draw_networkx_edges(G, pos, relative_sequence, 10, 'red')
-    # plt.savefig('p/sequence{}.png'.format(num))
+    if opponent == 0:
+        by_sequence_res = by_sequence(des, df, graph_branch)
+        # relative_sequence = sequence_res[0]
+        # G = draw_base_graph(pos, nodes, edges)
+        # nx.draw_networkx_edges(G, pos, relative_sequence, 10, 'red')
+        # plt.savefig('p/sequence{}.png'.format(num))
+        s = by_sequence_res[1]
+    else:
+        by_nearest_node_res = by_nearest_node(des, df, graph_branch)
+        # print('by_nearest_node_objective', by_nearest_node_res[1])
+        # relative_sequence = by_nearest_node_res[0]
+        # G = draw_base_graph(pos, nodes, edges)
+        # nx.draw_networkx_edges(G, pos, relative_sequence, 10, 'red')
+        # plt.savefig('p/nearest_node{}.png'.format(num))
+        s = by_nearest_node_res[1]
 
-    s = sequence_res[1]
-    m = model_res[1]
+    m = by_model_res[1]
     rate = (m - s) / s * 100
 
     return rate

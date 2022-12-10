@@ -1,12 +1,11 @@
 import sqlite3
 import time
-
 from compare import main
 import eventlet
 import threading
 
 
-if __name__ == '__main__':
+def battle():
 
     # 定义算例参数
     rows = 14
@@ -21,21 +20,22 @@ if __name__ == '__main__':
     time_limitation = 30
 
     def clac(n):
-        print(1)
+        print(f'线程{n}启动！')
         db = sqlite3.connect('sqlite.db')
         cursor = db.cursor()
         # try:
-        #     cursor.execute('DROP TABLE RESULT')
+        #     cursor.execute(f'DROP TABLE RESULT{opponent}')
         # except Exception as e:
         #     print(e)
-        # cursor.execute('''CREATE TABLE RESULT (id INTEGER PRIMARY KEY AUTOINCREMENT)''')
+        #
+        # cursor.execute(f'CREATE TABLE RESULT{opponent} (id INTEGER PRIMARY KEY AUTOINCREMENT)')
 
         fields = []
         for i in range(min_num, max_num + 1):
             field_name = 'NUM_{}'.format(i)
             fields.append(field_name)
             try:
-                cursor.execute('ALTER TABLE RESULT ADD {} FLOAT'.format(field_name))
+                cursor.execute(f'ALTER TABLE RESULT{opponent} ADD {field_name} FLOAT')
             except sqlite3.OperationalError as e:
                 pass
 
@@ -46,15 +46,23 @@ if __name__ == '__main__':
                 rate = 1
                 eventlet.monkey_patch()
                 with eventlet.Timeout(time_limitation, False):
-                    rate = main(rows, cols, shf_size, start, j)
+                    rate = main(rows, cols, shf_size, start, j, opponent)
                 res.append(str(round(rate)))
                 dur = time.perf_counter() - time_start
                 print('\r线程'+ str(n) + ';情景:' + str(i), '; 拣货数量:' + str(j), '; 情景耗时:' + str(round(dur)) + 's', end='')
-            cursor.execute('INSERT INTO RESULT ({}) VALUES ({})'.format(','.join(fields), ','.join(res)))
+            cursor.execute(f'INSERT INTO RESULT{opponent} ({",".join(fields)}) VALUES ({",".join(res)})')
             db.commit()
 
     # 多线程
-    thread_num = 10  # 线程数
-    for i in range(thread_num):
+    for i in range(threads):
         locals()[f't_{i}'] = threading.Thread(target=clac, args=(i,))
         locals()[f't_{i}'].start()
+
+
+if __name__ == '__main__':
+    # 选择比较对象: 0 代表与"按顺序拣货对比", 1 代表与"最近点拣货对比"
+    opponent = 1
+    # 线程数
+    threads = 5
+
+    battle()

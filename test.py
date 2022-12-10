@@ -1,6 +1,21 @@
-import pandas as pd
-import numpy as np
+import sys
+import threading
+import time
+import os
 
-arr = np.array([[1, 2, 3], [4, 5, 6]])
-df = pd.DataFrame(arr, index=[1,2])
-print(df[0].values)
+
+def test():
+    x = 0
+    for i in range(3):
+        sys.stdout.flush()
+        sys.stdout.write('\n--->' + str(i))
+        # print('--->' + str(i), end='\n')
+        x = x + 1
+        time.sleep(1)
+    return x
+
+
+thread_num = 5  # 线程数
+for i in range(thread_num):
+    locals()[f't_{i}'] = threading.Thread(target=test)
+    locals()[f't_{i}'].start()
