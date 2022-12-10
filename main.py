@@ -3,6 +3,11 @@ import time
 from compare import main
 import eventlet
 import threading
+import sys
+
+
+def p(param):
+    sys.stdout.write(param)
 
 
 def battle():
@@ -20,7 +25,7 @@ def battle():
     time_limitation = 30
 
     def clac(n):
-        print(f'线程{n}启动！')
+        p(f'\n线程{n}启动!')
         db = sqlite3.connect('sqlite.db')
         cursor = db.cursor()
         # try:
@@ -49,13 +54,17 @@ def battle():
                     rate = main(rows, cols, shf_size, start, j, opponent)
                 res.append(str(round(rate)))
                 dur = time.perf_counter() - time_start
-                print('线程'+ str(n) + ';情景:' + str(i), '; 拣货数量:' + str(j), '; 情景耗时:' + str(round(dur)) + 's', end='')
+                status[f'线程{n}'] = '情景:' + str(i) + '; 拣货数量:' + str(j) + '; 耗时:' + str(round(dur)) + 's'
+                print(f'\r{str(status)}', end='')
             cursor.execute(f'INSERT INTO RESULT{opponent} ({",".join(fields)}) VALUES ({",".join(res)})')
             db.commit()
 
     # 多线程
+    status = {}
     for i in range(threads):
+        status[f'线程{i}'] = ''
         locals()[f't_{i}'] = threading.Thread(target=clac, args=(i,))
+    for i in range(threads):
         locals()[f't_{i}'].start()
 
 
@@ -63,6 +72,6 @@ if __name__ == '__main__':
     # 选择比较对象: 0 代表与"按顺序拣货对比", 1 代表与"最近点拣货对比"
     opponent = 1
     # 线程数
-    threads = 50
+    threads = 3
 
     battle()
