@@ -51,10 +51,8 @@ for i in range(100):
 ```
 
 ## threading module
-#### _multi threads_
-
+#### _create multi threads_ 
 ```python
-# create multi threads 
 import threading
 
 
@@ -65,7 +63,7 @@ threads_num = int  # the total number of threads you want to create
 
 threads_list = []
 for i in range(threads_num):
-    t = threading.Thread(target=fun, args=('param', ))
+    t = threading.Thread(target=fun, args=('param', )) # using args to transfer params
     t.start()
     threads_list.append(t)
 
