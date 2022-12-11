@@ -21,8 +21,10 @@ def battle():
     # 定义计算参数
     min_num = 1
     max_num = 15
-    num_scene = 10
+    num_scene = 300
     time_limitation = 30
+
+    status = []
 
     def clac(n):
         p(f'\n线程{n}启动!')
@@ -54,13 +56,16 @@ def battle():
                     rate = main(rows, cols, shf_size, start, j, opponent)
                 res.append(str(round(rate)))
                 dur = time.perf_counter() - time_start
-                status[n] = '情景:' + str(i) + '; 拣货数量:' + str(j) + '; 耗时:' + str(round(dur)) + 's'
-                print(f'\r{"||".join(status)}', end='\n')
+                status[n] = f'线程:{n}; 情景:{i}; 拣货数量:{j}; 用时:{round(dur)}s;'
+                status_str = '\n'.join(status)
+                print('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
+                print(f'\r{status_str}', end='')
+
             cursor.execute(f'INSERT INTO RESULT{opponent} ({",".join(fields)}) VALUES ({",".join(res)})')
             db.commit()
 
     # 多线程
-    status = []
+
     for i in range(threads):
         status.append('')
         locals()[f't_{i}'] = threading.Thread(target=clac, args=(i,))
@@ -72,6 +77,6 @@ if __name__ == '__main__':
     # 选择比较对象: 0 代表与"按顺序拣货对比", 1 代表与"最近点拣货对比"
     opponent = 1
     # 线程数
-    threads = 5
+    threads = 20
 
     battle()
